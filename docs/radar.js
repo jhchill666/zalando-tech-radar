@@ -22,6 +22,8 @@
 
 
 function radar_visualization(config) {
+  const radius = 400;
+  const blipSize = 12
 
   // custom random number generator, to make random sequence reproducible
   // source: https://stackoverflow.com/questions/521295
@@ -39,20 +41,51 @@ function radar_visualization(config) {
     return min + (random() + random()) * 0.5 * (max - min);
   }
 
+  function val (total, num) {
+    return (2 / total) * num
+  }
+
+  const numQuadrants = config.entries.reduce((high, entry) => {
+    return Math.max(high, entry.quadrant)
+  }, 0)
+
+
+
   // radial_min / radial_max are multiples of PI
   const quadrants = [
     { radial_min: 0, radial_max: 0.5, factor_x: 1, factor_y: 1 },
     { radial_min: 0.5, radial_max: 1, factor_x: -1, factor_y: 1 },
     { radial_min: -1, radial_max: -0.5, factor_x: -1, factor_y: -1 },
     { radial_min: -0.5, radial_max: 0, factor_x: 1, factor_y: -1 }
+    // { radial_min: -val(5, 1), radial_max: 0, factor_x: 1, factor_y: -1 }
   ];
 
-  const rings = [
-    { radius: 130 },
-    { radius: 220 },
-    { radius: 310 },
-    { radius: 400 }
-  ];
+  const rings = Array.from(Array(config.rings.length).keys()).map((i) => {
+    const adoptSize = radius * 0.4
+    const remainSize = radius - adoptSize
+
+    if (i > 0) {
+      const diff = remainSize / (config.rings.length - 1)
+      return { radius: adoptSize + (diff * i) }
+    } 
+    
+    return { radius: adoptSize }
+  })
+
+
+  // { radius: 130 },
+  //   { radius: 220 },
+  //   { radius: 310 },
+  //   { radius: 400 }
+
+
+  // const rings = [
+  //   { radius: 130 },
+  //   { radius: 220 },
+  //   { radius: 310 },
+  //   { radius: 400 },
+  //   { radius: 490 },
+  // ];
 
   const title_offset =
     { x: -675, y: -420 };
@@ -64,6 +97,7 @@ function radar_visualization(config) {
     { x: 450, y: 90 },
     { x: -675, y: 90 },
     { x: -675, y: -310 },
+    { x: 450, y: -310 },
     { x: 450, y: -310 }
   ];
 
@@ -154,10 +188,10 @@ function radar_visualization(config) {
   }
 
   // partition entries according to segments
-  var segmented = new Array(4);
-  for (var quadrant = 0; quadrant < 4; quadrant++) {
-    segmented[quadrant] = new Array(4);
-    for (var ring = 0; ring < 4; ring++) {
+  var segmented = new Array(quadrants.length);
+  for (var quadrant = 0; quadrant < quadrants.length; quadrant++) {
+    segmented[quadrant] = new Array(quadrants.length);
+    for (var ring = 0; ring < rings.length; ring++) {
       segmented[quadrant][ring] = [];
     }
   }
@@ -168,8 +202,11 @@ function radar_visualization(config) {
 
   // assign unique sequential id to each entry
   var id = 1;
-  for (var quadrant of [2,3,1,0]) {
-    for (var ring = 0; ring < 4; ring++) {
+
+  const quads = Array.from(Array(quadrants.length).keys())
+
+  for (var quadrant of quads) {
+    for (var ring = 0; ring < rings.length; ring++) {
       var entries = segmented[quadrant][ring];
       entries.sort(function(a,b) { return a.label.localeCompare(b.label); })
       for (var i=0; i<entries.length; i++) {
@@ -184,10 +221,10 @@ function radar_visualization(config) {
 
   function viewbox(quadrant) {
     return [
-      Math.max(0, quadrants[quadrant].factor_x * 400) - 420,
-      Math.max(0, quadrants[quadrant].factor_y * 400) - 420,
-      440,
-      440
+      Math.max(0, quadrants[quadrant].factor_x * radius) - (radius+20),
+      Math.max(0, quadrants[quadrant].factor_y * radius) - (radius+20),
+      (radius+40),
+      (radius+40)
     ].join(" ");
   }
 
@@ -207,13 +244,13 @@ function radar_visualization(config) {
 
   // draw grid lines
   grid.append("line")
-    .attr("x1", 0).attr("y1", -400)
-    .attr("x2", 0).attr("y2", 400)
+    .attr("x1", 0).attr("y1", -radius)
+    .attr("x2", 0).attr("y2", radius)
     .style("stroke", config.colors.grid)
     .style("stroke-width", 1);
   grid.append("line")
-    .attr("x1", -400).attr("y1", 0)
-    .attr("x2", 400).attr("y2", 0)
+    .attr("x1", -radius).attr("y1", 0)
+    .attr("x2", radius).attr("y2", 0)
     .style("stroke", config.colors.grid)
     .style("stroke-width", 1);
 
@@ -245,8 +282,9 @@ function radar_visualization(config) {
         .text(config.rings[i].name)
         .attr("y", -rings[i].radius + 62)
         .attr("text-anchor", "middle")
-        .style("fill", "#e5e5e5")
-        .style("font-family", "Arial, Helvetica")
+        .style("fill", "#000000")
+        .style("font-family", config.fonts.titleFamily)
+        .style("opacity", 0.1)
         .style("font-size", "42px")
         .style("font-weight", "bold")
         .style("pointer-events", "none")
@@ -273,15 +311,16 @@ function radar_visualization(config) {
     radar.append("text")
       .attr("transform", translate(title_offset.x, title_offset.y))
       .text(config.title)
-      .style("font-family", "Arial, Helvetica")
-      .style("font-size", "34px");
+      .style("font-family", config.fonts.titleFamily)
+      .style("font-size", "34px")
+      .style("font-weight", "600");
 
     // footer
     radar.append("text")
       .attr("transform", translate(footer_offset.x, footer_offset.y))
       .text("▲ moved up     ▼ moved down")
       .attr("xml:space", "preserve")
-      .style("font-family", "Arial, Helvetica")
+      .style("font-family", config.fonts.titleFamily)
       .style("font-size", "10px");
 
     // legend
@@ -293,7 +332,7 @@ function radar_visualization(config) {
           legend_offset[quadrant].y - 45
         ))
         .text(config.quadrants[quadrant].name)
-        .style("font-family", "Arial, Helvetica")
+        .style("font-family", config.fonts.titleFamily)
         .style("font-size", "18px");
       for (var ring = 0; ring < 4; ring++) {
         legend.append("text")
@@ -326,7 +365,7 @@ function radar_visualization(config) {
   var rink = radar.append("g")
     .attr("id", "rink");
 
-  // rollover bubble (on top of everything else)
+  // Rollover text for blips
   var bubble = radar.append("g")
     .attr("id", "bubble")
     .attr("x", 0)
@@ -334,17 +373,18 @@ function radar_visualization(config) {
     .style("opacity", 0)
     .style("pointer-events", "none")
     .style("user-select", "none");
+
   bubble.append("rect")
-    .attr("rx", 4)
-    .attr("ry", 4)
-    .style("fill", "#333");
+    .attr("rx", 3)
+    .attr("ry", 3)
+    .style("fill", "#000000");
   bubble.append("text")
-    .style("font-family", "sans-serif")
-    .style("font-size", "10px")
+    .style("font-family", config.fonts.titleFamily)
+    .style("font-size", "12px")
     .style("fill", "#fff");
   bubble.append("path")
     .attr("d", "M 0,0 10,0 5,8 z")
-    .style("fill", "#333");
+    .style("fill", "#000000");
 
   function showBubble(d) {
     if (d.active || config.print_layout) {
@@ -352,13 +392,13 @@ function radar_visualization(config) {
         .text(d.label);
       var bbox = tooltip.node().getBBox();
       d3.select("#bubble")
-        .attr("transform", translate(d.x - bbox.width / 2, d.y - 16))
-        .style("opacity", 0.8);
+        .attr("transform", translate(d.x - bbox.width / 2, d.y - 20))
+        .style("opacity", 0.7);
       d3.select("#bubble rect")
         .attr("x", -5)
         .attr("y", -bbox.height)
         .attr("width", bbox.width + 10)
-        .attr("height", bbox.height + 4);
+        .attr("height", bbox.height + 8);
       d3.select("#bubble path")
         .attr("transform", translate(bbox.width / 2 - 5, 3));
     }
@@ -382,6 +422,44 @@ function radar_visualization(config) {
     legendItem.removeAttribute("fill");
   }
 
+  function center() {
+    return Math.round(radius / 2)
+  }
+
+  function toRadian(angleInDegrees) {
+    return (Math.PI * angleInDegrees) / 180
+  }
+
+  function plotLines(quadrantGroup, quadrant) {
+    var startX = size * (1 - (-Math.sin(toRadian(quadrant.startAngle)) + 1) / 2)
+    var endX = size * (1 - (-Math.sin(toRadian(quadrant.startAngle - 90)) + 1) / 2)
+
+    var startY = size * (1 - (Math.cos(toRadian(quadrant.startAngle)) + 1) / 2)
+    var endY = size * (1 - (Math.cos(toRadian(quadrant.startAngle - 90)) + 1) / 2)
+
+    if (startY > endY) {
+      var aux = endY
+      endY = startY
+      startY = aux
+    }
+
+    quadrantGroup
+      .append('line')
+      .attr('x1', center())
+      .attr('x2', center())
+      .attr('y1', startY - 2)
+      .attr('y2', endY + 2)
+      .attr('stroke-width', 10)
+
+    quadrantGroup
+      .append('line')
+      .attr('x1', endX)
+      .attr('y1', center())
+      .attr('x2', startX)
+      .attr('y2', center())
+      .attr('stroke-width', 10)
+  }
+
   // draw blips on radar
   var blips = rink.selectAll(".blip")
     .data(config.entries)
@@ -402,18 +480,22 @@ function radar_visualization(config) {
         .attr("xlink:href", d.link);
     }
 
+    const triWidth = blipSize * 1.4
+    const triHeight = triWidth * 1.8
+
     // blip shape
     if (d.moved > 0) {
       blip.append("path")
-        .attr("d", "M -11,5 11,5 0,-13 z") // triangle pointing up
+        .attr("d", `M -${triWidth},${triHeight*0.3} ${triWidth},${triHeight*0.3} 0,-${triHeight*0.6} z`) // triangle pointing up
         .style("fill", d.color);
     } else if (d.moved < 0) {
       blip.append("path")
-        .attr("d", "M -11,-5 11,-5 0,13 z") // triangle pointing down
+        // .attr("d", "M -11,-5 11,-5 0,13 z") // triangle pointing down
+        .attr("d", `M -${triWidth},-${triHeight*0.3} ${triWidth},-${triHeight*0.3} 0,${triHeight*0.6} z`) // triangle pointing down
         .style("fill", d.color);
     } else {
       blip.append("circle")
-        .attr("r", 9)
+        .attr("r", blipSize)
         .attr("fill", d.color);
     }
 
@@ -426,7 +508,7 @@ function radar_visualization(config) {
         .attr("text-anchor", "middle")
         .style("fill", "#fff")
         .style("font-family", "Arial, Helvetica")
-        .style("font-size", function(d) { return blip_text.length > 2 ? "8px" : "9px"; })
+        .style("font-size", function(d) { return blip_text.length > 2 ? "11px" : "12px"; })
         .style("pointer-events", "none")
         .style("user-select", "none");
     }

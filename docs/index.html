@@ -5,9 +5,11 @@
 <meta http-equiv="Content-type" content="text/html; charset=utf-8">
 <meta name="description" content="Zalando Tech Radar: a tool to visualize technology choices, inspire and support Engineering teams at Zalando to pick the best technologies for new projects">
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Zalando Tech Radar</title>
-<link rel="shortcut icon" href="https://www.zalando.de/favicon.ico">
-
+<title>Beautypie Tech Radar</title>
+<link rel="shortcut icon" href="favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap" rel="stylesheet">
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="radar.js"></script>
 
@@ -21,30 +23,43 @@
 <script>
 radar_visualization({
   svg_id: "radar",
+  quadGap: 30,
   width: 1450,
   height: 1000,
+  fonts: {
+    titleFamily: "Poppins"
+  },
   colors: {
-    background: "#fff",
-    grid: "#bbb",
+    background: "#f5e6eb",
+    grid: "#ACACAC",
     inactive: "#ddd"
   },
-  title: "Zalando Tech Radar — 2022.08",
+  title: "BeautyPie TechRadar - 2022.09",
   quadrants: [
     { name: "Languages" },
     { name: "Infrastructure" },
     { name: "Datastores" },
     { name: "Data Management" },
+    { name: "ISP" },
   ],
   rings: [
-    { name: "ADOPT", color: "#93c47d" },
-    { name: "TRIAL", color: "#93d2c2" },
-    { name: "ASSESS", color: "#fbdb84" },
-    { name: "HOLD", color: "#efafa9" }
+    { name: "ADOPT", color: "#31a758" },
+    { name: "TRIAL", color: "#AD22C8" },
+    { name: "ASSESS", color: "#edc131" },
+    { name: "HOLD", color: "#D24B5B" },
+    // { name: "BIN", color: "#6F68DB" }
   ],
   print_layout: true,
-  // zoomed_quadrant: 0,
+  // zoomed_quadrant: 3,
   //ENTRIES
   entries: [
+      {
+        "quadrant": 3,
+        "ring": 3,
+        "label": "Jamie",
+        "active": true,
+        "moved": 1
+      },
       {
         "quadrant": 3,
         "ring": 2,
@@ -615,6 +630,7 @@ The Zalando Tech Radar is a list of technologies, complemented by an assessment 
 <li><strong>TRIAL</strong> &mdash; Technologies that we have seen work with success in project work to solve a real problem; first serious usage experience that confirm benefits and can uncover limitations. TRIAL technologies are slightly more risky; some engineers in our organization walked this path and will share knowledge and experiences.</li>
 <li><strong>ASSESS</strong> &mdash; Technologies that are promising and have clear potential value-add for us; technologies worth to invest some research and prototyping efforts in to see if it has impact. ASSESS technologies have higher risks; they are often brand new and highly unproven in our organisation. You will find some engineers that have knowledge in the technology and promote it, you may even find teams that have started a prototyping effort.</li>
 <li><strong>HOLD</strong> &mdash; Technologies not recommended to be used for new projects. Technologies that we think are not (yet) worth to (further) invest in. HOLD technologies should not be used for new projects, but usually can be continued for existing projects.</li>
+<li><strong>BIN</strong> &mdash; Technologies not recommended to be used for new projects. Technologies that we think are not (yet) worth to (further) invest in. HOLD technologies should not be used for new projects, but usually can be continued for existing projects.</li>
 </ul>
 
 </td><td>
